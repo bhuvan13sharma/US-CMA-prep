@@ -68,19 +68,6 @@ export const LoginGate: React.FC = () => {
             </button>
           </div>
 
-          {/* Access Roles Explanation */}
-          <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-              <span className="font-bold text-slate-800 block text-[11px] uppercase tracking-wider">Account Access:</span>
-              <p className="text-[11px] text-slate-600">
-                • <strong>Candidates:</strong> Sign in with your Gmail to take Prometric mock tests, review notes, and track your passing scaled score.
-              </p>
-              <p className="text-[11px] text-slate-600">
-                • <strong>Administrator:</strong> Sign in with <span className="text-blue-700 font-bold">bhuvan13sharma@gmail.com</span> for full LMS resource control and student progress management.
-              </p>
-            </div>
-          </div>
-
           {/* Platform Features Preview */}
           <div className="pt-2 border-t border-slate-100 space-y-2 text-xs text-slate-600">
             <div className="flex items-center space-x-2">

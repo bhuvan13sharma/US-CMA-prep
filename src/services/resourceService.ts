@@ -14,7 +14,16 @@ export class ResourceService {
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Keep custom user/admin notes, merge with all INITIAL_NOTES so any newly written syllabus notes are included
+          const customNotes = parsed.filter((n: StudyNote) => n.isCustom);
+          // For initial notes, check if user has a customized version, else use latest initial note
+          const refreshedInitials = INITIAL_NOTES.map(initNote => {
+            const userVersion = parsed.find((p: StudyNote) => p.id === initNote.id);
+            return (userVersion && userVersion.isCustom) ? userVersion : initNote;
+          });
+          return [...refreshedInitials, ...customNotes];
+        }
       } catch {
         // fallback
       }
