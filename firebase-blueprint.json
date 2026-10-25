@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account and profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "role": { "type": "string", "enum": ["admin", "student"], "maxLength": 20 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "lastActiveAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Admin": {
+      "title": "Admin Role Marker",
+      "description": "Indicates admin authorization for RBAC",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 256 },
+        "grantedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["email"]
+    },
+    "Resource": {
+      "title": "LMS Resource",
+      "description": "Study notes, formulas, MCQs, or mock test definitions curated by admins",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["note", "formula", "mcq", "mock_test"], "maxLength": 20 },
+        "part": { "type": "string", "enum": ["part1", "part2", "general"], "maxLength": 20 },
+        "topic": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "content": { "type": "string", "maxLength": 20000 },
+        "authorEmail": { "type": "string", "maxLength": 256 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "type", "part", "topic", "title", "content"]
+    },
+    "UserProgress": {
+      "title": "User Study Progress",
+      "description": "Tracks student progress across questions, notes, and tests",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "totalQuestionsAttempted": { "type": "number" },
+        "totalQuestionsCorrect": { "type": "number" },
+        "mockTestsTaken": { "type": "number" },
+        "averageScore": { "type": "number" },
+        "lastStudyDate": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "userEmail"]
+    },
+    "TestAttempt": {
+      "title": "Mock Test Simulator Attempt",
+      "description": "Records user mock exam session results",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "testTitle": { "type": "string", "maxLength": 256 },
+        "part": { "type": "string", "maxLength": 20 },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "correctAnswers": { "type": "number" },
+        "scaledScore": { "type": "number" },
+        "passed": { "type": "boolean" },
+        "timeSpentSeconds": { "type": "number" },
+        "date": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "userEmail", "score", "scaledScore", "passed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin privileges marker"
+    },
+    "/resources/{resourceId}": {
+      "schema": { "$ref": "#/entities/Resource" },
+      "description": "Study materials, notes, formulas, and questions"
+    },
+    "/user_progress/{userId}": {
+      "schema": { "$ref": "#/entities/UserProgress" },
+      "description": "Aggregate progress tracking per user"
+    },
+    "/test_attempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/TestAttempt" },
+      "description": "Mock test results"
+    }
+  }
+}

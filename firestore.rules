@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'bhuvan13sharma@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow delete: if isAdmin();
+    }
+
+    // Admins marker
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // LMS Resources: notes, formulas, mcqs, mock tests
+    // Any signed in student can read, only admin can create, update, delete
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidId(resourceId);
+    }
+
+    // User Progress: students track their own, admins can inspect all users
+    match /user_progress/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create, update: if isSignedIn() && (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow delete: if isAdmin();
+    }
+
+    // Mock test simulator attempts
+    match /test_attempts/{attemptId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(attemptId);
+      allow update, delete: if isAdmin() && isValidId(attemptId);
+    }
+  }
+}

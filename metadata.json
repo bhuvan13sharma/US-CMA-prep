@@ -1,0 +1,6 @@
+{
+  "name": "CMA USA Prep",
+  "description": "Comprehensive Learning Management System for US CMA candidates featuring study notes, MCQ question bank, Prometric-style mock test simulator, interactive formula sheet, and user progress tracking with admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
