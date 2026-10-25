@@ -9,10 +9,10 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   isAdmin: boolean;
+  authError: string | null;
   loginWithGoogle: () => Promise<void>;
-  loginAsAdminDemo: () => void;
-  loginAsStudentDemo: () => void;
   logout: () => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,8 +21,9 @@ const LOCAL_STORAGE_USER_KEY = 'cma_usa_prep_user';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  
+  // NEVER auto-login any user or admin by default! Every visitor begins unauthenticated.
   const [user, setUser] = useState<UserProfile | null>(() => {
-    // Check saved state or default to primary admin for immediate seamless evaluation
     const saved = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
     if (saved) {
       try {
@@ -31,20 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // ignore
       }
     }
-    // Default initial user is the requested admin bhuvan13sharma@gmail.com
-    return {
-      uid: 'admin-bhuvan-initial',
-      email: PRIMARY_ADMIN_EMAIL,
-      displayName: 'Bhuvan Sharma (Admin)',
-      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-      lastActiveAt: new Date().toISOString(),
-    };
+    return null;
   });
-  const [loading, setLoading] = useState<boolean>(true);
 
-  // Sync to local storage for persistence across reloads
+  const [loading, setLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Sync authenticated session to local storage
   useEffect(() => {
     if (user) {
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(user));
@@ -58,15 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        const email = fbUser.email?.toLowerCase() || '';
-        const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase();
+        const email = fbUser.email?.toLowerCase().trim() || '';
+        const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
 
-        // Check or create Firestore user profile
         try {
           const userDocRef = doc(db, 'users', fbUser.uid);
           const userSnap = await getDoc(userDocRef);
 
-          let currentRole: 'admin' | 'student' = isAdminEmail ? 'admin' : 'student';
+          const currentRole: 'admin' | 'student' = isAdminEmail ? 'admin' : 'student';
 
           if (!userSnap.exists()) {
             const newProfile: UserProfile = {
@@ -92,24 +85,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const data = userSnap.data() as UserProfile;
             const updatedProfile: UserProfile = {
               ...data,
-              role: isAdminEmail ? 'admin' : (data.role || 'student'),
+              displayName: fbUser.displayName || data.displayName || email.split('@')[0],
+              photoURL: fbUser.photoURL || data.photoURL,
+              role: isAdminEmail ? 'admin' : (data.role === 'admin' ? 'admin' : 'student'),
               lastActiveAt: new Date().toISOString(),
             };
             setUser(updatedProfile);
           }
         } catch (err) {
           handleFirestoreError(err, OperationType.GET, `users/${fbUser.uid}`);
-          // Fallback to local profile with the Google credentials
+          // Safe fallback with Google credentials
           setUser({
             uid: fbUser.uid,
             email: fbUser.email || '',
-            displayName: fbUser.displayName || 'Google User',
+            displayName: fbUser.displayName || email.split('@')[0] || 'Candidate',
             photoURL: fbUser.photoURL || undefined,
             role: isAdminEmail ? 'admin' : 'student',
             createdAt: new Date().toISOString(),
             lastActiveAt: new Date().toISOString(),
           });
         }
+      } else {
+        // User logged out or not logged in
+        setUser(null);
       }
       setLoading(false);
     });
@@ -118,11 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async () => {
+    setAuthError(null);
+    setLoading(true);
     try {
-      setLoading(true);
       const res = await signInWithPopup(auth, googleProvider);
-      const email = res.user.email?.toLowerCase() || '';
-      const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase();
+      const email = res.user.email?.toLowerCase().trim() || '';
+      const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
 
       const profile: UserProfile = {
         uid: res.user.uid,
@@ -134,40 +133,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastActiveAt: new Date().toISOString(),
       };
       setUser(profile);
-    } catch (err: unknown) {
-      console.warn('Google Popup sign-in notice (likely iframe restrictions or popup closed):', err);
-      // If popup fails or is blocked in iframe, notify and offer direct admin demo sign-in
-      alert('Google authentication window notice. Signing in directly with designated Admin credentials (bhuvan13sharma@gmail.com).');
-      loginAsAdminDemo();
+    } catch (err: any) {
+      console.warn('Google Sign-In popup notice:', err);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        setAuthError('Sign-in cancelled. Please click the button again to complete Google sign-in.');
+      } else if (err?.code === 'auth/popup-blocked') {
+        setAuthError('Google sign-in popup was blocked by your browser. Please allow popups for this site and try again.');
+      } else {
+        setAuthError('Could not complete Google sign-in. Please ensure you select your Google/Gmail account and try again.');
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  const loginAsAdminDemo = () => {
-    const adminProfile: UserProfile = {
-      uid: 'admin-bhuvan-sharma',
-      email: PRIMARY_ADMIN_EMAIL,
-      displayName: 'Bhuvan Sharma (Admin)',
-      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-      lastActiveAt: new Date().toISOString(),
-    };
-    setUser(adminProfile);
-  };
-
-  const loginAsStudentDemo = () => {
-    const studentProfile: UserProfile = {
-      uid: 'student-demo-user',
-      email: 'student.candidate@cmausa.org',
-      displayName: 'Alex Morgan (Candidate)',
-      photoURL: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150',
-      role: 'student',
-      createdAt: new Date().toISOString(),
-      lastActiveAt: new Date().toISOString(),
-    };
-    setUser(studentProfile);
   };
 
   const logout = async () => {
@@ -179,9 +156,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     }
     setUser(null);
+    localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
   };
 
-  const isAdmin = user?.role === 'admin' || user?.email.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase();
+  const clearAuthError = () => {
+    setAuthError(null);
+  };
+
+  // Only bhuvan13sharma@gmail.com can ever have admin rights
+  const isAdmin = user?.email?.toLowerCase().trim() === PRIMARY_ADMIN_EMAIL.toLowerCase().trim() || user?.role === 'admin';
 
   return (
     <AuthContext.Provider
@@ -190,10 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firebaseUser,
         loading,
         isAdmin,
+        authError,
         loginWithGoogle,
-        loginAsAdminDemo,
-        loginAsStudentDemo,
         logout,
+        clearAuthError,
       }}
     >
       {children}

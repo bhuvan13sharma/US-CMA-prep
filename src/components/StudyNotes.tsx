@@ -68,13 +68,16 @@ export const StudyNotes: React.FC<StudyNotesProps> = ({
     return matchesPart && matchesSearch && matchesBookmark;
   });
 
+  const [modalError, setModalError] = useState<string | null>(null);
+
   const activeNote = notes.find((n) => n.id === activeNoteId) || filteredNotes[0] || notes[0];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setModalError(null);
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-        alert('Please select a valid PDF file.');
+        setModalError('Please select a valid PDF file (.pdf).');
         return;
       }
       setPdfFile(file);
@@ -87,12 +90,13 @@ export const StudyNotes: React.FC<StudyNotesProps> = ({
   };
 
   const handleSavePdfNote = async () => {
+    setModalError(null);
     if (!pdfFile) {
-      alert('Please choose a PDF file.');
+      setModalError('Please select a PDF file to upload.');
       return;
     }
     if (!pdfTitle.trim()) {
-      alert('Please enter a note title.');
+      setModalError('Please enter a title for this study note.');
       return;
     }
 
@@ -145,14 +149,14 @@ export const StudyNotes: React.FC<StudyNotesProps> = ({
       };
 
       reader.onerror = () => {
-        alert('Failed to read the PDF file. Please try again.');
+        setModalError('Failed to read the PDF file. Please try again.');
         setUploadLoading(false);
       };
 
       reader.readAsDataURL(pdfFile);
     } catch (err) {
       console.error('PDF upload error:', err);
-      alert('Failed to process PDF note.');
+      setModalError('Failed to process PDF note.');
       setUploadLoading(false);
     }
   };
@@ -519,6 +523,12 @@ export const StudyNotes: React.FC<StudyNotesProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {modalError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                {modalError}
+              </div>
+            )}
 
             {/* PDF File Picker Box */}
             <div

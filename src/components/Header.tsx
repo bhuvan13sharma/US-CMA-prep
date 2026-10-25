@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenCalculator, activeTab, onNavigateTab }) => {
-  const { user, isAdmin, loginWithGoogle, loginAsAdminDemo, loginAsStudentDemo, logout } = useAuth();
+  const { user, isAdmin, loginWithGoogle, logout } = useAuth();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   return (
@@ -130,38 +130,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCalculator, activeTab, onN
                         <span>Manage LMS Resources (Add/Edit Notes)</span>
                       </button>
                     )}
-
-                    <div className="px-4 py-2 border-t border-slate-100">
-                      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
-                        Switch Identity / Preview
-                      </p>
-                      <div className="space-y-1">
-                        <button
-                          onClick={() => {
-                            loginAsAdminDemo();
-                            setUserDropdownOpen(false);
-                          }}
-                          className={`w-full text-left text-xs px-2.5 py-1.5 rounded flex items-center justify-between cursor-pointer ${
-                            user.email === 'bhuvan13sharma@gmail.com' ? 'bg-amber-50 text-amber-800 font-bold' : 'hover:bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          <span className="truncate">bhuvan13sharma@gmail.com</span>
-                          <span className="text-[9px] px-1 rounded bg-amber-200 text-amber-800">Admin</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            loginAsStudentDemo();
-                            setUserDropdownOpen(false);
-                          }}
-                          className={`w-full text-left text-xs px-2.5 py-1.5 rounded flex items-center justify-between cursor-pointer ${
-                            user.email !== 'bhuvan13sharma@gmail.com' ? 'bg-blue-50 text-blue-800 font-bold' : 'hover:bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          <span className="truncate">Alex Morgan (Candidate)</span>
-                          <span className="text-[9px] px-1 rounded bg-blue-200 text-blue-800">Student</span>
-                        </button>
-                      </div>
-                    </div>
 
                     <div className="pt-2 border-t border-slate-100 px-2">
                       <button

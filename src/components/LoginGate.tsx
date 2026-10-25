@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Award, BookOpen, FileCheck2, Binary, ShieldCheck, Lock, CheckCircle2 } from 'lucide-react';
+import { Award, Lock, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 export const LoginGate: React.FC = () => {
-  const { loginWithGoogle, loginAsAdminDemo, loginAsStudentDemo, loading } = useAuth();
+  const { loginWithGoogle, loading, authError, clearAuthError } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
@@ -17,7 +17,7 @@ export const LoginGate: React.FC = () => {
           US CMA <span className="text-blue-600">PREP</span>
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-slate-600 font-medium">
-          Official US CMA Learning Management System
+          Certified Management Accountant LMS
         </p>
       </div>
 
@@ -29,19 +29,34 @@ export const LoginGate: React.FC = () => {
               <span>Authentication Required</span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 pt-1">
-              Sign In to Access Your LMS
+              Sign In with Your Google Account
             </h2>
             <p className="text-xs text-slate-500">
-              Please sign in with your Google or Gmail account to view notes, practice Prometric tests, and track your progress.
+              Every candidate and administrator must log in with their personal Google / Gmail account to access study materials and personal test records.
             </p>
           </div>
+
+          {/* Auth Error Banner if popup was closed or blocked */}
+          {authError && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1 font-medium">{authError}</div>
+              <button
+                onClick={clearAuthError}
+                className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Primary Google Login Button */}
           <div className="space-y-3">
             <button
               onClick={loginWithGoogle}
               disabled={loading}
-              className="w-full flex items-center justify-center space-x-3 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-xs transition cursor-pointer"
+              className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-sm shadow-xs transition cursor-pointer disabled:opacity-60"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -49,55 +64,28 @@ export const LoginGate: React.FC = () => {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <span>Continue with Google / Gmail</span>
+              <span>{loading ? 'Connecting to Google...' : 'Sign in with Google / Gmail'}</span>
             </button>
           </div>
 
-          {/* Quick Demo Switcher for Instant Testing */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center">
-              Direct Evaluation Options
-            </span>
-            <div className="space-y-1.5">
-              <button
-                onClick={loginAsAdminDemo}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-700" />
-                  <div>
-                    <p className="text-xs font-bold text-amber-900">Sign in as Admin</p>
-                    <p className="text-[10px] text-amber-700">bhuvan13sharma@gmail.com</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900">
-                  Full Admin Access
-                </span>
-              </button>
-
-              <button
-                onClick={loginAsStudentDemo}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-left transition cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-xs font-bold text-blue-900">Sign in as Student</p>
-                    <p className="text-[10px] text-blue-700">Alex Morgan (Candidate)</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200 text-blue-900">
-                  Candidate Access
-                </span>
-              </button>
+          {/* Access Roles Explanation */}
+          <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+              <span className="font-bold text-slate-800 block text-[11px] uppercase tracking-wider">Account Access:</span>
+              <p className="text-[11px] text-slate-600">
+                • <strong>Candidates:</strong> Sign in with your Gmail to take Prometric mock tests, review notes, and track your passing scaled score.
+              </p>
+              <p className="text-[11px] text-slate-600">
+                • <strong>Administrator:</strong> Sign in with <span className="text-blue-700 font-bold">bhuvan13sharma@gmail.com</span> for full LMS resource control and student progress management.
+              </p>
             </div>
           </div>
 
           {/* Platform Features Preview */}
-          <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+          <div className="pt-2 border-t border-slate-100 space-y-2 text-xs text-slate-600">
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Part 1 & Part 2 condensed study notes & PDF chapters</span>
+              <span>Part 1 & Part 2 study notes & lecture PDFs</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

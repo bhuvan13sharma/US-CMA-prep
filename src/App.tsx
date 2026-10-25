@@ -53,6 +53,7 @@ const MainApp: React.FC = () => {
       const existing = ProgressService.getLocalProgress(user.uid);
       if (existing) {
         setProgress(existing);
+        ProgressService.updateCohortRoster(existing);
       } else {
         const fresh = ProgressService.createDefaultProgress(
           user.uid,
@@ -62,6 +63,7 @@ const MainApp: React.FC = () => {
         );
         ProgressService.saveProgress(fresh);
         setProgress(fresh);
+        ProgressService.updateCohortRoster(fresh);
       }
     }
   }, [user]);

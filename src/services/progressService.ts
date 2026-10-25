@@ -137,136 +137,18 @@ export class ProgressService {
     return updated;
   }
 
-  // ALL USERS PROGRESS (Cohort tracker for admins & students)
+  // ALL USERS PROGRESS (Cohort tracker for admins)
   static getAllUsersCohort(): UserProgress[] {
     const raw = localStorage.getItem(ALL_USERS_PROGRESS_KEY);
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch {
         // fallback
       }
     }
-
-    // Default authentic cohort data so the tracker displays active candidates right away
-    const initialCohort: UserProgress[] = [
-      {
-        userId: 'admin-bhuvan-sharma',
-        userEmail: 'bhuvan13sharma@gmail.com',
-        displayName: 'Bhuvan Sharma',
-        role: 'admin',
-        totalQuestionsAttempted: 142,
-        totalQuestionsCorrect: 125,
-        accuracyRate: 88,
-        mockTestsTaken: 5,
-        averageScaledScore: 430,
-        completedNotes: ['note-p1-sec-a', 'note-p1-sec-b', 'note-p1-sec-c', 'note-p2-sec-a', 'note-p2-sec-b'],
-        bookmarkedQuestions: ['q-101', 'q-203'],
-        bookmarkedFormulas: ['f-wacc', 'f-capm', 'f-dupont-3'],
-        recentAttempts: [
-          {
-            id: 'att-1',
-            userId: 'admin-bhuvan-sharma',
-            userEmail: 'bhuvan13sharma@gmail.com',
-            userName: 'Bhuvan Sharma',
-            testTitle: 'Part 1 & 2 Comprehensive Mock Simulation',
-            part: 'mixed',
-            score: 86,
-            rawScore: 43,
-            totalQuestions: 50,
-            scaledScore: 435,
-            passed: true,
-            timeSpentSeconds: 4200,
-            date: '2026-10-24',
-            sectionBreakdown: { 'Part 1 Planning': { correct: 22, total: 25 }, 'Part 2 Strategy': { correct: 21, total: 25 } },
-          }
-        ],
-        studyStreakDays: 14,
-        hoursStudied: 48.0,
-        readinessScore: 91,
-        lastStudyDate: '2026-10-24',
-      },
-      {
-        userId: 'student-alex-01',
-        userEmail: 'alex.tan@finance.edu',
-        displayName: 'Alex Tan',
-        role: 'student',
-        totalQuestionsAttempted: 95,
-        totalQuestionsCorrect: 76,
-        accuracyRate: 80,
-        mockTestsTaken: 3,
-        averageScaledScore: 395,
-        completedNotes: ['note-p1-sec-a', 'note-p1-sec-b', 'note-p2-sec-a'],
-        bookmarkedQuestions: [],
-        bookmarkedFormulas: ['f-wacc', 'f-cvp-breakeven'],
-        recentAttempts: [],
-        studyStreakDays: 7,
-        hoursStudied: 26.5,
-        readinessScore: 78,
-        lastStudyDate: '2026-10-23',
-      },
-      {
-        userId: 'student-priya-02',
-        userEmail: 'priya.sharma@cpa-audit.com',
-        displayName: 'Priya Verma',
-        role: 'student',
-        totalQuestionsAttempted: 110,
-        totalQuestionsCorrect: 92,
-        accuracyRate: 84,
-        mockTestsTaken: 4,
-        averageScaledScore: 415,
-        completedNotes: ['note-p1-sec-a', 'note-p1-sec-c', 'note-p2-sec-f'],
-        bookmarkedQuestions: ['q-103'],
-        bookmarkedFormulas: ['f-dm-variances', 'f-wacc'],
-        recentAttempts: [],
-        studyStreakDays: 9,
-        hoursStudied: 34.0,
-        readinessScore: 85,
-        lastStudyDate: '2026-10-24',
-      },
-      {
-        userId: 'student-david-03',
-        userEmail: 'david.miller@corpfin.org',
-        displayName: 'David Miller',
-        role: 'student',
-        totalQuestionsAttempted: 60,
-        totalQuestionsCorrect: 41,
-        accuracyRate: 68,
-        mockTestsTaken: 2,
-        averageScaledScore: 345,
-        completedNotes: ['note-p1-sec-b'],
-        bookmarkedQuestions: [],
-        bookmarkedFormulas: ['f-dupont-3'],
-        recentAttempts: [],
-        studyStreakDays: 2,
-        hoursStudied: 14.0,
-        readinessScore: 58,
-        lastStudyDate: '2026-10-21',
-      },
-      {
-        userId: 'student-sarah-04',
-        userEmail: 'sarah.jenkins@banking.com',
-        displayName: 'Sarah Jenkins',
-        role: 'student',
-        totalQuestionsAttempted: 130,
-        totalQuestionsCorrect: 112,
-        accuracyRate: 86,
-        mockTestsTaken: 5,
-        averageScaledScore: 428,
-        completedNotes: ['note-p1-sec-a', 'note-p1-sec-b', 'note-p1-sec-c', 'note-p2-sec-c'],
-        bookmarkedQuestions: [],
-        bookmarkedFormulas: ['f-wacc', 'f-eoq'],
-        recentAttempts: [],
-        studyStreakDays: 12,
-        hoursStudied: 41.5,
-        readinessScore: 89,
-        lastStudyDate: '2026-10-24',
-      }
-    ];
-
-    localStorage.setItem(ALL_USERS_PROGRESS_KEY, JSON.stringify(initialCohort));
-    return initialCohort;
+    return [];
   }
 
   static updateCohortRoster(userProgress: UserProgress): void {

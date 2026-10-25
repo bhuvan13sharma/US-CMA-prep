@@ -56,6 +56,16 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
   const [studentFilter, setStudentFilter] = useState<'all' | 'passed' | 'progress'>('all');
   const [selectedStudentDetail, setSelectedStudentDetail] = useState<UserProgress | null>(null);
 
+  // Modal Error & Confirmation Dialog State
+  const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
+
   // Note Modal States
   const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(!!initialEditingNote);
   const [noteForm, setNoteForm] = useState<StudyNote>(initialEditingNote || {
@@ -112,6 +122,7 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
 
   // NOTE HANDLERS
   const handleOpenAddNote = () => {
+    setFormError(null);
     setNoteForm({
       id: `note-${Date.now()}`,
       part: 'part1',
@@ -131,16 +142,18 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
   };
 
   const handleEditNote = (note: StudyNote) => {
+    setFormError(null);
     setNoteForm(note);
     setNotePdfFile(null);
     setIsNoteModalOpen(true);
   };
 
   const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormError(null);
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-        alert('Please choose a valid PDF file.');
+        setFormError('Please choose a valid PDF file (.pdf).');
         return;
       }
       setNotePdfFile(file);
@@ -154,8 +167,9 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
   };
 
   const handleSaveNote = async () => {
+    setFormError(null);
     if (!noteForm.title.trim()) {
-      alert('Please fill out the note title.');
+      setFormError('Please fill out the note title.');
       return;
     }
 
@@ -191,15 +205,24 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
     }
   };
 
-  const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this study note?')) return;
-    const updated = await ResourceService.deleteNote(noteId);
-    onUpdateNotes(updated);
-    showToast('Study note deleted.');
+  const handleDeleteNote = (noteId: string) => {
+    setConfirmDialog({
+      title: 'Delete Study Note',
+      message: 'Are you sure you want to delete this study note?',
+      confirmLabel: 'Delete Note',
+      isDestructive: true,
+      onConfirm: async () => {
+        const updated = await ResourceService.deleteNote(noteId);
+        onUpdateNotes(updated);
+        showToast('Study note deleted.');
+        setConfirmDialog(null);
+      }
+    });
   };
 
   // QUESTION HANDLERS
   const handleOpenAddQuestion = () => {
+    setFormError(null);
     setQuestionForm({
       id: `q-${Date.now()}`,
       part: 'part1',
@@ -216,13 +239,15 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
   };
 
   const handleEditQuestion = (q: MCQQuestion) => {
+    setFormError(null);
     setQuestionForm(q);
     setIsQuestionModalOpen(true);
   };
 
   const handleSaveQuestion = async () => {
+    setFormError(null);
     if (!questionForm.questionText.trim()) {
-      alert('Please enter question text.');
+      setFormError('Please enter question text.');
       return;
     }
     const updated = await ResourceService.saveQuestion(questionForm, user?.email || 'admin@cma.org');
@@ -231,15 +256,24 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
     showToast('Question saved to MCQ Question Bank!');
   };
 
-  const handleDeleteQuestion = async (qId: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return;
-    const updated = await ResourceService.deleteQuestion(qId);
-    onUpdateQuestions(updated);
-    showToast('Question deleted.');
+  const handleDeleteQuestion = (qId: string) => {
+    setConfirmDialog({
+      title: 'Delete Question',
+      message: 'Are you sure you want to delete this question from the MCQ question bank?',
+      confirmLabel: 'Delete Question',
+      isDestructive: true,
+      onConfirm: async () => {
+        const updated = await ResourceService.deleteQuestion(qId);
+        onUpdateQuestions(updated);
+        showToast('Question deleted.');
+        setConfirmDialog(null);
+      }
+    });
   };
 
   // FORMULA HANDLERS
   const handleOpenAddFormula = () => {
+    setFormError(null);
     setFormulaForm({
       id: `f-${Date.now()}`,
       part: 'part2',
@@ -257,13 +291,15 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
   };
 
   const handleEditFormula = (f: FormulaDefinition) => {
+    setFormError(null);
     setFormulaForm(f);
     setIsFormulaModalOpen(true);
   };
 
   const handleSaveFormula = async () => {
+    setFormError(null);
     if (!formulaForm.name.trim() || !formulaForm.equation.trim()) {
-      alert('Please enter formula name and equation.');
+      setFormError('Please enter formula name and equation.');
       return;
     }
     const updated = await ResourceService.saveFormula(formulaForm, user?.email || 'admin@cma.org');
@@ -272,20 +308,36 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
     showToast('Formula saved successfully!');
   };
 
-  const handleDeleteFormula = async (fId: string) => {
-    if (!confirm('Are you sure you want to delete this formula?')) return;
-    const updated = await ResourceService.deleteFormula(fId);
-    onUpdateFormulas(updated);
-    showToast('Formula removed.');
+  const handleDeleteFormula = (fId: string) => {
+    setConfirmDialog({
+      title: 'Delete Formula',
+      message: 'Are you sure you want to delete this formula?',
+      confirmLabel: 'Delete Formula',
+      isDestructive: true,
+      onConfirm: async () => {
+        const updated = await ResourceService.deleteFormula(fId);
+        onUpdateFormulas(updated);
+        showToast('Formula removed.');
+        setConfirmDialog(null);
+      }
+    });
   };
 
   const handleResetToDefaults = () => {
-    if (!confirm('Reset all resources to official standard IMA library? Any custom additions will be cleared.')) return;
-    ResourceService.resetAllToDefaults();
-    onUpdateNotes(ResourceService.getNotes());
-    onUpdateQuestions(ResourceService.getQuestions());
-    onUpdateFormulas(ResourceService.getFormulas());
-    showToast('Restored standard IMA library.');
+    setConfirmDialog({
+      title: 'Reset Standard Library',
+      message: 'Reset all resources to official standard IMA library? Any custom additions will be cleared.',
+      confirmLabel: 'Reset Everything',
+      isDestructive: true,
+      onConfirm: () => {
+        ResourceService.resetAllToDefaults();
+        onUpdateNotes(ResourceService.getNotes());
+        onUpdateQuestions(ResourceService.getQuestions());
+        onUpdateFormulas(ResourceService.getFormulas());
+        showToast('Restored standard IMA library.');
+        setConfirmDialog(null);
+      }
+    });
   };
 
   const filteredCohort = cohort.filter((u) => {
@@ -322,22 +374,27 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
     document.body.removeChild(link);
   };
 
-  const handleDeleteUser = async (userId: string, name: string, email: string) => {
+  const handleDeleteUser = (userId: string, name: string, email: string) => {
     if (email.toLowerCase() === 'bhuvan13sharma@gmail.com') {
-      alert('The primary administrator account (bhuvan13sharma@gmail.com) cannot be removed.');
+      showToast('The primary administrator account (bhuvan13sharma@gmail.com) cannot be removed.');
       return;
     }
 
-    if (!confirm(`Are you sure you want to remove user "${name}" (${email})? This will permanently delete their account and progress records.`)) {
-      return;
-    }
-
-    const updated = await ProgressService.deleteUser(userId);
-    setCohort(updated);
-    if (selectedStudentDetail?.userId === userId) {
-      setSelectedStudentDetail(null);
-    }
-    showToast(`User "${name}" removed successfully.`);
+    setConfirmDialog({
+      title: 'Remove Student Account',
+      message: `Are you sure you want to remove user "${name}" (${email})? This will permanently delete their account and progress records.`,
+      confirmLabel: 'Remove User',
+      isDestructive: true,
+      onConfirm: async () => {
+        const updated = await ProgressService.deleteUser(userId);
+        setCohort(updated);
+        if (selectedStudentDetail?.userId === userId) {
+          setSelectedStudentDetail(null);
+        }
+        showToast(`User "${name}" removed successfully.`);
+        setConfirmDialog(null);
+      }
+    });
   };
 
   return (
@@ -824,6 +881,12 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
               </button>
             </div>
 
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                {formError}
+              </div>
+            )}
+
             {/* Optional PDF File Attachment */}
             <div className="p-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 space-y-2">
               <div className="flex items-center justify-between">
@@ -938,6 +1001,12 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
               </button>
             </div>
 
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                {formError}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="font-semibold block text-slate-700 mb-1">CMA Part</label>
@@ -1043,6 +1112,12 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
               </button>
             </div>
 
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                {formError}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="font-semibold block text-slate-700 mb-1">Category</label>
@@ -1118,6 +1193,37 @@ export const AdminResourceManager: React.FC<AdminResourceManagerProps> = ({
               >
                 <Save className="w-4 h-4" />
                 <span>Save Formula</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global In-App Confirmation Dialog */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-2xl">
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-900">{confirmDialog.title}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{confirmDialog.message}</p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className={`px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer ${
+                  confirmDialog.isDestructive
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {confirmDialog.confirmLabel || 'Confirm'}
               </button>
             </div>
           </div>
