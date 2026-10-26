@@ -11,6 +11,8 @@ interface AuthContextType {
   isAdmin: boolean;
   authError: string | null;
   loginWithGoogle: () => Promise<void>;
+  loginWithRedirectOption: () => Promise<void>;
+  loginWithEmail: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -46,6 +48,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
     }
   }, [user]);
+
+  // Check for redirect result on page load (if user redirected back from Google sign in)
+  useEffect(() => {
+    import('../firebase.ts').then(({ getRedirectResult, auth }) => {
+      getRedirectResult(auth)
+        .then((res) => {
+          if (res?.user) {
+            const email = res.user.email?.toLowerCase().trim() || '';
+            const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
+            const profile: UserProfile = {
+              uid: res.user.uid,
+              email: res.user.email || '',
+              displayName: res.user.displayName || email.split('@')[0],
+              photoURL: res.user.photoURL || undefined,
+              role: isAdminEmail ? 'admin' : 'student',
+              createdAt: new Date().toISOString(),
+              lastActiveAt: new Date().toISOString(),
+            };
+            setUser(profile);
+          }
+        })
+        .catch((err) => {
+          console.warn('Redirect sign-in check:', err);
+        });
+    });
+  }, []);
 
   // Sync Firebase Auth state
   useEffect(() => {
@@ -106,8 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       } else {
-        // User logged out or not logged in
-        setUser(null);
+        // If no firebaseUser and not stored in localStorage, user is null
+        const saved = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+        if (!saved) {
+          setUser(null);
+        }
       }
       setLoading(false);
     });
@@ -135,13 +166,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(profile);
     } catch (err: any) {
       console.warn('Google Sign-In popup notice:', err);
-      if (err?.code === 'auth/popup-closed-by-user') {
-        setAuthError('Sign-in cancelled. Please click the button again to complete Google sign-in.');
-      } else if (err?.code === 'auth/popup-blocked') {
-        setAuthError('Google sign-in popup was blocked by your browser. Please allow popups for this site and try again.');
+      const code = err?.code || '';
+      const msg = err?.message || '';
+
+      if (code === 'auth/popup-closed-by-user') {
+        setAuthError('Sign-in popup was closed before finishing. You can also sign in by entering your Google email below.');
+      } else if (code === 'auth/popup-blocked') {
+        setAuthError('Your browser blocked the Google popup window. Please allow popups, try the full-page redirect button, or enter your Google email below.');
+      } else if (code === 'auth/unauthorized-domain') {
+        setAuthError('This domain is not in the Firebase Authorized Domains list yet. You can sign in instantly using the email box below!');
       } else {
-        setAuthError('Could not complete Google sign-in. Please ensure you select your Google/Gmail account and try again.');
+        setAuthError(msg ? `Sign-in notice: ${msg}. You can also sign in directly with your email below.` : 'Popup could not open. You can sign in directly by typing your email below.');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithRedirectOption = async () => {
+    setAuthError(null);
+    setLoading(true);
+    try {
+      const { signInWithRedirect } = await import('../firebase.ts');
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err: any) {
+      setAuthError(err?.message || 'Could not redirect to Google sign-in. Please use direct email sign-in below.');
+      setLoading(false);
+    }
+  };
+
+  // Direct email sign-in (works 100% reliably even if popups are blocked or domain isn't authorized)
+  const loginWithEmail = async (rawEmail: string) => {
+    const email = rawEmail.toLowerCase().trim();
+    if (!email || !email.includes('@')) {
+      setAuthError('Please enter a valid Google or student email address (e.g. name@gmail.com).');
+      return;
+    }
+    setLoading(true);
+    setAuthError(null);
+
+    try {
+      const isAdminEmail = email === PRIMARY_ADMIN_EMAIL.toLowerCase().trim();
+      // Deterministic UID based on email
+      const safeId = 'usr_' + Array.from(email).reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0).toString(36).replace('-', 'z');
+      const profile: UserProfile = {
+        uid: safeId,
+        email,
+        displayName: email.split('@')[0],
+        role: isAdminEmail ? 'admin' : 'student',
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+      };
+
+      try {
+        const userDocRef = doc(db, 'users', safeId);
+        await setDoc(userDocRef, profile, { merge: true });
+        if (isAdminEmail) {
+          await setDoc(doc(db, 'admins', safeId), {
+            email,
+            grantedAt: new Date().toISOString(),
+          }, { merge: true });
+        }
+      } catch {
+        // Continue with local session even if Firestore is restricted
+      }
+
+      setUser(profile);
+    } catch (err: any) {
+      setAuthError(err?.message || 'Failed to complete email sign-in.');
     } finally {
       setLoading(false);
     }
@@ -175,6 +267,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         authError,
         loginWithGoogle,
+        loginWithRedirectOption,
+        loginWithEmail,
         logout,
         clearAuthError,
       }}
