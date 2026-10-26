@@ -3,6 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      /* Defensive shim for browser extensions attempting to intercept window.fetch */
+      (function() {
+        try {
+          var _origFetch = window.fetch ? window.fetch.bind(window) : undefined;
+          var _fetch = _origFetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return _fetch;
+            },
+            set: function(val) {
+              _fetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (err) {
+          // Silently continue if window is sealed
+        }
+
+        /* Suppress external errors emitted by browser extensions */
+        window.addEventListener('error', function(e) {
+          if (e.filename && e.filename.indexOf('chrome-extension://') !== -1) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return true;
+          }
+        }, true);
+      })();
+    </script>
     <title>US CMA PREP | Learning Management System</title>
     <meta name="description" content="Comprehensive Learning Management System for US CMA candidates featuring study notes, MCQ question bank, Prometric-style mock test simulator, interactive formula sheet, and user progress tracking with admin management." />
     <meta property="og:title" content="US CMA PREP | Learning Management System" />

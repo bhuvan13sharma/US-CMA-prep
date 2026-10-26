@@ -196,7 +196,7 @@ const MainApp: React.FC = () => {
           <div className="flex items-center space-x-3">
             <span>Passing Scaled Score: 360 / 500</span>
             <span>•</span>
-            <span className="text-slate-700 font-semibold">Admin: bhuvan13sharma@gmail.com</span>
+            <span className="text-slate-600">Official Exam Format (100 MCQs + 2 Essays)</span>
           </div>
         </div>
       </footer>
