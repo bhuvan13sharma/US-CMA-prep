@@ -44,28 +44,18 @@ export const LoginGate: React.FC = () => {
             </p>
           </div>
 
-          {/* Auth Error Banner with Redirect Option */}
+          {/* Auth Notice / Error Banner */}
           {authError && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-2">
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="flex-1 font-medium leading-relaxed">{authError}</div>
                 <button
                   onClick={clearAuthError}
-                  className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
+                  className="text-amber-500 hover:text-amber-700 p-0.5 cursor-pointer"
                   title="Dismiss"
                 >
                   <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={loginWithRedirectOption}
-                  className="inline-flex items-center space-x-1 text-[11px] font-bold text-blue-700 hover:text-blue-800 underline cursor-pointer"
-                >
-                  <span>Popup not opening? Click here to try full-page redirect</span>
-                  <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </div>

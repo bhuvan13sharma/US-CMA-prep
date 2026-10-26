@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (code === 'auth/popup-blocked') {
         setAuthError('Your browser blocked the Google popup window. Please allow popups, try the full-page redirect button, or enter your Google email below.');
       } else if (code === 'auth/unauthorized-domain') {
-        setAuthError('This domain is not in the Firebase Authorized Domains list yet. You can sign in instantly using the email box below!');
+        setAuthError(`This web address (${window.location.hostname}) is not in your Firebase Authorized Domains list yet. You can sign in immediately using the email box below! To enable the Google button for this URL, add "${window.location.hostname}" in Firebase Console > Authentication > Settings > Authorized domains.`);
       } else {
         setAuthError(msg ? `Sign-in notice: ${msg}. You can also sign in directly with your email below.` : 'Popup could not open. You can sign in directly by typing your email below.');
       }
